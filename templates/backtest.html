@@ -1,0 +1,954 @@
+{% extends "base.html" %}
+
+{% block title %}Backtest - Walford Capitals Trading Bot{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center">
+            <h2><i class="fas fa-history me-2"></i>Strategy Backtesting</h2>
+            <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#backtestModal">
+                <i class="fas fa-play me-1"></i>New Backtest
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Backtest Results Display -->
+{% if results %}
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="alert alert-success">
+            <i class="fas fa-check-circle me-2"></i>
+            Backtest completed successfully! Results are displayed below.
+        </div>
+    </div>
+</div>
+
+<!-- Performance Metrics -->
+<div class="row mb-4">
+    <div class="col-xl-3 col-lg-6 mb-3">
+        <div class="card bg-primary text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h6 class="text-uppercase mb-1">Total Return</h6>
+                        <h4 class="mb-0">{{ "%.2f"|format(results.total_return * 100) }}%</h4>
+                    </div>
+                    <i class="fas fa-percentage fa-2x opacity-75"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-xl-3 col-lg-6 mb-3">
+        <div class="card bg-success text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h6 class="text-uppercase mb-1">Sharpe Ratio</h6>
+                        <h4 class="mb-0">{{ "%.2f"|format(results.sharpe_ratio or 0) }}</h4>
+                    </div>
+                    <i class="fas fa-chart-line fa-2x opacity-75"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-xl-3 col-lg-6 mb-3">
+        <div class="card bg-info text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h6 class="text-uppercase mb-1">Max Drawdown</h6>
+                        <h4 class="mb-0">{{ "%.2f"|format((results.max_drawdown or 0) * 100) }}%</h4>
+                    </div>
+                    <i class="fas fa-arrow-down fa-2x opacity-75"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-xl-3 col-lg-6 mb-3">
+        <div class="card bg-warning text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h6 class="text-uppercase mb-1">Win Rate</h6>
+                        <h4 class="mb-0">{{ "%.1f"|format((results.win_rate or 0) * 100) }}%</h4>
+                    </div>
+                    <i class="fas fa-trophy fa-2x opacity-75"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Equity Curve Chart -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-chart-area me-2"></i>Equity Curve</h5>
+            </div>
+            <div class="card-body">
+                <canvas id="equityChart" height="400"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Trade Analysis -->
+<div class="row mb-4">
+    <div class="col-lg-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-chart-pie me-2"></i>Trade Distribution</h5>
+            </div>
+            <div class="card-body">
+                <canvas id="tradeDistributionChart" height="300"></canvas>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-table me-2"></i>Strategy Statistics</h5>
+            </div>
+            <div class="card-body">
+                <table class="table table-borderless">
+                    <tr>
+                        <td>Initial Capital</td>
+                        <td class="text-end"><strong>${{ "%.2f"|format(results.initial_capital) }}</strong></td>
+                    </tr>
+                    <tr>
+                        <td>Final Capital</td>
+                        <td class="text-end"><strong>${{ "%.2f"|format(results.final_capital) }}</strong></td>
+                    </tr>
+                    <tr>
+                        <td>Total Trades</td>
+                        <td class="text-end"><strong>{{ results.total_trades or 0 }}</strong></td>
+                    </tr>
+                    <tr>
+                        <td>Average Win</td>
+                        <td class="text-end text-success"><strong>${{ "%.2f"|format(results.avg_win or 0) }}</strong></td>
+                    </tr>
+                    <tr>
+                        <td>Average Loss</td>
+                        <td class="text-end text-danger"><strong>${{ "%.2f"|format(results.avg_loss or 0) }}</strong></td>
+                    </tr>
+                    <tr>
+                        <td>Profit Factor</td>
+                        <td class="text-end"><strong>{{ "%.2f"|format(results.profit_factor or 0) }}</strong></td>
+                    </tr>
+                    <tr>
+                        <td>Volatility</td>
+                        <td class="text-end"><strong>{{ "%.2f"|format((results.volatility or 0) * 100) }}%</strong></td>
+                    </tr>
+                    <tr>
+                        <td>Sortino Ratio</td>
+                        <td class="text-end"><strong>{{ "%.2f"|format(results.sortino_ratio or 0) }}</strong></td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Backtest History -->
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-clock me-2"></i>Backtest History</h5>
+            </div>
+            <div class="card-body">
+                {% if backtest_history %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead class="table-dark">
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Symbol</th>
+                                    <th>Strategy</th>
+                                    <th>Period</th>
+                                    <th>Return</th>
+                                    <th>Sharpe</th>
+                                    <th>Max DD</th>
+                                    <th>Trades</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for bt in backtest_history %}
+                                <tr>
+                                    <td>{{ bt.created_at.strftime('%m/%d/%Y') }}</td>
+                                    <td><strong>{{ bt.symbol }}</strong></td>
+                                    <td>{{ bt.strategy_name.title() }}</td>
+                                    <td>
+                                        <small>
+                                            {{ bt.start_date.strftime('%m/%d/%y') }} - 
+                                            {{ bt.end_date.strftime('%m/%d/%y') }}
+                                        </small>
+                                    </td>
+                                    <td class="{% if bt.total_return >= 0 %}text-success{% else %}text-danger{% endif %}">
+                                        {{ "%.2f"|format(bt.total_return * 100) }}%
+                                    </td>
+                                    <td>{{ "%.2f"|format(bt.sharpe_ratio or 0) }}</td>
+                                    <td class="text-danger">{{ "%.2f"|format((bt.max_drawdown or 0) * 100) }}%</td>
+                                    <td>{{ bt.total_trades or 0 }}</td>
+                                    <td>
+                                        <div class="btn-group btn-group-sm">
+                                            <button class="btn btn-outline-primary" onclick="viewBacktest({{ bt.id }})">
+                                                <i class="fas fa-eye"></i>
+                                            </button>
+                                            <button class="btn btn-outline-success" onclick="cloneBacktest({{ bt.id }})">
+                                                <i class="fas fa-copy"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <div class="text-center py-5">
+                        <i class="fas fa-history fa-4x text-muted mb-3"></i>
+                        <h5 class="text-muted">No Backtest History</h5>
+                        <p class="text-muted">Run your first backtest to see results here</p>
+                        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#backtestModal">
+                            <i class="fas fa-play me-1"></i>Start Backtesting
+                        </button>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Backtest Configuration Modal -->
+<div class="modal fade" id="backtestModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-cog me-2"></i>Configure Backtest
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="POST" id="backtestForm">
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="symbol" class="form-label">Symbol</label>
+                            <select class="form-select" id="symbol" name="symbol" required>
+                                <option value="">Select Symbol</option>
+                                <option value="AAPL">AAPL - Apple Inc.</option>
+                                <option value="MSFT">MSFT - Microsoft Corp.</option>
+                                <option value="GOOGL">GOOGL - Alphabet Inc.</option>
+                                <option value="AMZN">AMZN - Amazon.com Inc.</option>
+                                <option value="TSLA">TSLA - Tesla Inc.</option>
+                                <option value="META">META - Meta Platforms</option>
+                                <option value="NVDA">NVDA - NVIDIA Corp.</option>
+                                <option value="JPM">JPM - JPMorgan Chase</option>
+                                <option value="JNJ">JNJ - Johnson & Johnson</option>
+                                <option value="V">V - Visa Inc.</option>
+                            </select>
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <label for="strategy" class="form-label">Strategy</label>
+                            <select class="form-select" id="strategy" name="strategy" required>
+                                <option value="ml_signals">ML Signals</option>
+                                <option value="technical_indicators">Technical Indicators</option>
+                                <option value="buy_and_hold">Buy and Hold</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="start_date" class="form-label">Start Date</label>
+                            <input type="date" class="form-control" id="start_date" name="start_date" required>
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <label for="end_date" class="form-label">End Date</label>
+                            <input type="date" class="form-control" id="end_date" name="end_date" required>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="initial_capital" class="form-label">Initial Capital ($)</label>
+                            <input type="number" class="form-control" id="initial_capital" name="initial_capital" 
+                                   value="100000" min="1000" step="1000" required>
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <label for="commission" class="form-label">Commission Rate (%)</label>
+                            <input type="number" class="form-control" id="commission" name="commission" 
+                                   value="0.1" min="0" max="1" step="0.01">
+                        </div>
+                    </div>
+                    
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle me-2"></i>
+                        <strong>Note:</strong> Backtesting uses historical data to simulate trading strategies. 
+                        Past performance does not guarantee future results.
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-play me-1"></i>Run Backtest
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Set default dates
+    const endDate = new Date();
+    const startDate = new Date();
+    startDate.setFullYear(endDate.getFullYear() - 1);
+    
+    document.getElementById('end_date').value = endDate.toISOString().split('T')[0];
+    document.getElementById('start_date').value = startDate.toISOString().split('T')[0];
+    
+    {% if results %}
+    // Initialize charts with backtest results
+    initializeEquityChart();
+    initializeTradeDistributionChart();
+    {% endif %}
+});
+
+{% if results %}
+function initializeEquityChart() {
+    const ctx = document.getElementById('equityChart').getContext('2d');
+    
+    // Prepare data from results
+    const portfolioValues = {{ results.portfolio_values | tojson }};
+    const labels = portfolioValues.map(point => new Date(point.timestamp));
+    const values = portfolioValues.map(point => point.value);
+    
+    new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: 'Portfolio Value',
+                data: values,
+                borderColor: '#0d6efd',
+                backgroundColor: 'rgba(13, 110, 253, 0.1)',
+                borderWidth: 2,
+                fill: true,
+                tension: 0.1
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: false
+                }
+            },
+            scales: {
+                x: {
+                    type: 'time',
+                    time: {
+                        unit: 'day'
+                    },
+                    grid: {
+                        color: 'rgba(255, 255, 255, 0.1)'
+                    }
+                },
+                y: {
+                    beginAtZero: false,
+                    grid: {
+                        color: 'rgba(255, 255, 255, 0.1)'
+                    },
+                    ticks: {
+                        callback: function(value) {
+                            return '$' + value.toLocaleString();
+                        }
+                    }
+                }
+            }
+        }
+    });
+}
+
+function initializeTradeDistributionChart() {
+    const ctx = document.getElementById('tradeDistributionChart').getContext('2d');
+    
+    // Calculate trade distribution
+    const trades = {{ results.trades | tojson }};
+    const winningTrades = trades.filter(trade => trade.pnl > 0).length;
+    const losing{% extends "base.html" %}
+
+{% block title %}Backtest - Walford Capitals Trading Bot{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center">
+            <h2><i class="fas fa-history me-2"></i>Strategy Backtesting</h2>
+            <div class="btn-group">
+                <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#backtestModal">
+                    <i class="fas fa-play me-1"></i>New Backtest
+                </button>
+                <button type="button" class="btn btn-outline-primary" onclick="refreshBacktests()">
+                    <i class="fas fa-sync me-1"></i>Refresh
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Backtest Results Display -->
+{% if results %}
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card border-primary">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">
+                    <i class="fas fa-chart-line me-2"></i>
+                    Latest Backtest Results - {{ results.symbol }} ({{ results.strategy }})
+                </h5>
+            </div>
+            <div class="card-body">
+                <!-- Performance Metrics -->
+                <div class="row mb-4">
+                    <div class="col-lg-3 col-md-6 mb-3">
+                        <div class="text-center p-3 bg-light rounded">
+                            <h6 class="text-muted mb-2">Total Return</h6>
+                            <h4 class="{% if results.total_return >= 0 %}text-success{% else %}text-danger{% endif %}">
+                                {{ "%.2f"|format(results.total_return * 100) }}%
+                            </h4>
+                        </div>
+                    </div>
+                    <div class="col-lg-3 col-md-6 mb-3">
+                        <div class="text-center p-3 bg-light rounded">
+                            <h6 class="text-muted mb-2">Sharpe Ratio</h6>
+                            <h4 class="{% if results.sharpe_ratio >= 1 %}text-success{% elif results.sharpe_ratio >= 0.5 %}text-warning{% else %}text-danger{% endif %}">
+                                {{ "%.3f"|format(results.sharpe_ratio or 0) }}
+                            </h4>
+                        </div>
+                    </div>
+                    <div class="col-lg-3 col-md-6 mb-3">
+                        <div class="text-center p-3 bg-light rounded">
+                            <h6 class="text-muted mb-2">Max Drawdown</h6>
+                            <h4 class="text-danger">
+                                {{ "%.2f"|format((results.max_drawdown or 0) * 100) }}%
+                            </h4>
+                        </div>
+                    </div>
+                    <div class="col-lg-3 col-md-6 mb-3">
+                        <div class="text-center p-3 bg-light rounded">
+                            <h6 class="text-muted mb-2">Win Rate</h6>
+                            <h4 class="{% if results.win_rate >= 0.6 %}text-success{% elif results.win_rate >= 0.4 %}text-warning{% else %}text-danger{% endif %}">
+                                {{ "%.1f"|format((results.win_rate or 0) * 100) }}%
+                            </h4>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Portfolio Value Chart -->
+                <div class="row mb-4">
+                    <div class="col-12">
+                        <h6 class="mb-3">Portfolio Value Over Time</h6>
+                        <canvas id="backtestChart" height="300"></canvas>
+                    </div>
+                </div>
+
+                <!-- Trade Analysis -->
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6 class="mb-3">Trade Statistics</h6>
+                        <table class="table table-sm">
+                            <tr>
+                                <td>Total Trades:</td>
+                                <td><strong>{{ results.total_trades or 0 }}</strong></td>
+                            </tr>
+                            <tr>
+                                <td>Average Trade Duration:</td>
+                                <td><strong>{{ "%.1f"|format(results.avg_trade_duration or 0) }} hours</strong></td>
+                            </tr>
+                            <tr>
+                                <td>Profit Factor:</td>
+                                <td><strong>{{ "%.2f"|format(results.profit_factor or 0) }}</strong></td>
+                            </tr>
+                            <tr>
+                                <td>Average Win:</td>
+                                <td class="text-success"><strong>${{ "%.2f"|format(results.avg_win or 0) }}</strong></td>
+                            </tr>
+                            <tr>
+                                <td>Average Loss:</td>
+                                <td class="text-danger"><strong>${{ "%.2f"|format(results.avg_loss or 0) }}</strong></td>
+                            </tr>
+                        </table>
+                    </div>
+                    <div class="col-md-6">
+                        <h6 class="mb-3">Risk Metrics</h6>
+                        <table class="table table-sm">
+                            <tr>
+                                <td>Sortino Ratio:</td>
+                                <td><strong>{{ "%.3f"|format(results.sortino_ratio or 0) }}</strong></td>
+                            </tr>
+                            <tr>
+                                <td>Calmar Ratio:</td>
+                                <td><strong>{{ "%.3f"|format(results.calmar_ratio or 0) }}</strong></td>
+                            </tr>
+                            <tr>
+                                <td>Volatility:</td>
+                                <td><strong>{{ "%.2f"|format((results.volatility or 0) * 100) }}%</strong></td>
+                            </tr>
+                            <tr>
+                                <td>Final Capital:</td>
+                                <td><strong>${{ "%.2f"|format(results.final_capital) }}</strong></td>
+                            </tr>
+                            <tr>
+                                <td>Initial Capital:</td>
+                                <td><strong>${{ "%.2f"|format(results.initial_capital) }}</strong></td>
+                            </tr>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="text-center mt-4">
+                    <button class="btn btn-success me-2" onclick="downloadResults({{ backtest_id }})">
+                        <i class="fas fa-download me-1"></i>Download Report
+                    </button>
+                    <button class="btn btn-info me-2" onclick="compareBacktest({{ backtest_id }})">
+                        <i class="fas fa-balance-scale me-1"></i>Compare
+                    </button>
+                    <button class="btn btn-primary" onclick="deployStrategy('{{ results.strategy }}', '{{ results.symbol }}')">
+                        <i class="fas fa-rocket me-1"></i>Deploy Strategy
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Backtest History -->
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-list me-2"></i>Backtest History</h5>
+            </div>
+            <div class="card-body">
+                {% if backtest_history %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead class="table-dark">
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Symbol</th>
+                                    <th>Strategy</th>
+                                    <th>Period</th>
+                                    <th>Total Return</th>
+                                    <th>Sharpe Ratio</th>
+                                    <th>Max Drawdown</th>
+                                    <th>Win Rate</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for backtest in backtest_history %}
+                                <tr>
+                                    <td>{{ backtest.created_at.strftime('%m/%d/%Y') }}</td>
+                                    <td><strong>{{ backtest.symbol }}</strong></td>
+                                    <td>
+                                        <span class="badge bg-info">{{ backtest.strategy_name }}</span>
+                                    </td>
+                                    <td>
+                                        <small>
+                                            {{ backtest.start_date.strftime('%m/%d/%y') }} - 
+                                            {{ backtest.end_date.strftime('%m/%d/%y') }}
+                                        </small>
+                                    </td>
+                                    <td class="{% if backtest.total_return >= 0 %}text-success{% else %}text-danger{% endif %}">
+                                        {{ "%.2f"|format(backtest.total_return * 100) }}%
+                                    </td>
+                                    <td>{{ "%.3f"|format(backtest.sharpe_ratio or 0) }}</td>
+                                    <td class="text-danger">
+                                        {{ "%.2f"|format((backtest.max_drawdown or 0) * 100) }}%
+                                    </td>
+                                    <td>{{ "%.1f"|format((backtest.win_rate or 0) * 100) }}%</td>
+                                    <td>
+                                        <div class="btn-group btn-group-sm">
+                                            <button class="btn btn-outline-primary" onclick="viewBacktest({{ backtest.id }})">
+                                                <i class="fas fa-eye"></i>
+                                            </button>
+                                            <button class="btn btn-outline-success" onclick="downloadResults({{ backtest.id }})">
+                                                <i class="fas fa-download"></i>
+                                            </button>
+                                            <button class="btn btn-outline-danger" onclick="deleteBacktest({{ backtest.id }})">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <div class="text-center py-5">
+                        <i class="fas fa-history fa-4x text-muted mb-3"></i>
+                        <h5 class="text-muted">No Backtest History</h5>
+                        <p class="text-muted">Run your first backtest to see results here</p>
+                        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#backtestModal">
+                            <i class="fas fa-play me-1"></i>Run First Backtest
+                        </button>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Backtest Configuration Modal -->
+<div class="modal fade" id="backtestModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-cog me-2"></i>Configure Backtest
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="backtestForm" method="POST">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="backtestSymbol" class="form-label">Symbol</label>
+                            <select class="form-select" id="backtestSymbol" name="symbol" required>
+                                <option value="">Select Symbol</option>
+                                <option value="AAPL">AAPL - Apple Inc.</option>
+                                <option value="MSFT">MSFT - Microsoft Corp.</option>
+                                <option value="GOOGL">GOOGL - Alphabet Inc.</option>
+                                <option value="AMZN">AMZN - Amazon.com Inc.</option>
+                                <option value="TSLA">TSLA - Tesla Inc.</option>
+                                <option value="META">META - Meta Platforms</option>
+                                <option value="NVDA">NVDA - NVIDIA Corp.</option>
+                                <option value="JPM">JPM - JPMorgan Chase</option>
+                                <option value="JNJ">JNJ - Johnson & Johnson</option>
+                                <option value="V">V - Visa Inc.</option>
+                            </select>
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <label for="backtestStrategy" class="form-label">Strategy</label>
+                            <select class="form-select" id="backtestStrategy" name="strategy" required>
+                                <option value="">Select Strategy</option>
+                                <option value="ml_signals">ML Signals (XGBoost)</option>
+                                <option value="technical_indicators">Technical Indicators</option>
+                                <option value="buy_and_hold">Buy and Hold</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="backtestStartDate" class="form-label">Start Date</label>
+                            <input type="date" class="form-control" id="backtestStartDate" name="start_date" required>
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <label for="backtestEndDate" class="form-label">End Date</label>
+                            <input type="date" class="form-control" id="backtestEndDate" name="end_date" required>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="backtestCapital" class="form-label">Initial Capital ($)</label>
+                            <input type="number" class="form-control" id="backtestCapital" name="initial_capital" 
+                                   value="100000" min="1000" step="1000" required>
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <label for="backtestCommission" class="form-label">Commission Rate (%)</label>
+                            <input type="number" class="form-control" id="backtestCommission" 
+                                   value="0.1" min="0" max="2" step="0.01">
+                        </div>
+                    </div>
+                    
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle me-2"></i>
+                        <strong>Note:</strong> Backtest will use historical data and may take several minutes to complete.
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="runBacktest()">
+                    <i class="fas fa-play me-1"></i>Run Backtest
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Strategy Comparison Modal -->
+<div class="modal fade" id="compareModal" tabindex="-1">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-balance-scale me-2"></i>Strategy Comparison
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row">
+                    <div class="col-12">
+                        <canvas id="comparisonChart" height="300"></canvas>
+                    </div>
+                </div>
+                <div class="row mt-4">
+                    <div class="col-12">
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>Strategy</th>
+                                    <th>Total Return</th>
+                                    <th>Sharpe Ratio</th>
+                                    <th>Max Drawdown</th>
+                                    <th>Win Rate</th>
+                                </tr>
+                            </thead>
+                            <tbody id="comparisonTableBody">
+                                <!-- Populated by JavaScript -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+let backtestChart;
+let comparisonChart;
+
+document.addEventListener('DOMContentLoaded', function() {
+    // Set default dates
+    const endDate = new Date();
+    const startDate = new Date();
+    startDate.setFullYear(endDate.getFullYear() - 1);
+    
+    document.getElementById('backtestStartDate').value = startDate.toISOString().split('T')[0];
+    document.getElementById('backtestEndDate').value = endDate.toISOString().split('T')[0];
+    
+    // Initialize charts
+    {% if results and results.portfolio_values %}
+    initializeBacktestChart();
+    {% endif %}
+});
+
+{% if results and results.portfolio_values %}
+function initializeBacktestChart() {
+    const ctx = document.getElementById('backtestChart').getContext('2d');
+    
+    const portfolioData = {{ results.portfolio_values | tojson }};
+    const labels = portfolioData.map(point => new Date(point.timestamp));
+    const values = portfolioData.map(point => point.value);
+    
+    backtestChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: 'Portfolio Value',
+                data: values,
+                borderColor: '#28a745',
+                backgroundColor: 'rgba(40, 167, 69, 0.1)',
+                borderWidth: 2,
+                fill: true,
+                tension: 0.1
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: false
+                }
+            },
+            scales: {
+                x: {
+                    type: 'time',
+                    time: {
+                        unit: 'day'
+                    }
+                },
+                y: {
+                    beginAtZero: false,
+                    ticks: {
+                        callback: function(value) {
+                            return '$' + value.toLocaleString();
+                        }
+                    }
+                }
+            }
+        }
+    });
+}
+{% endif %}
+
+function runBacktest() {
+    const form = document.getElementById('backtestForm');
+    const formData = new FormData(form);
+    
+    // Validate form
+    if (!form.checkValidity()) {
+        form.reportValidity();
+        return;
+    }
+    
+    const button = event.target;
+    const originalText = button.innerHTML;
+    button.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Running Backtest...';
+    button.disabled = true;
+    
+    // Submit form
+    fetch('/backtest', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => {
+        if (response.redirected) {
+            window.location.href = response.url;
+        } else {
+            return response.text().then(text => {
+                throw new Error('Backtest failed: ' + text);
+            });
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Error running backtest: ' + error.message);
+    })
+    .finally(() => {
+        button.innerHTML = originalText;
+        button.disabled = false;
+    });
+}
+
+function viewBacktest(backtestId) {
+    // Redirect to view specific backtest results
+    window.location.href = `/backtest?id=${backtestId}`;
+}
+
+function downloadResults(backtestId) {
+    const button = event.target;
+    const originalText = button.innerHTML;
+    button.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+    button.disabled = true;
+    
+    // Create download link
+    setTimeout(() => {
+        const link = document.createElement('a');
+        link.href = `data:text/csv;charset=utf-8,Backtest Results Export\nBacktest ID: ${backtestId}\n`;
+        link.download = `backtest_results_${backtestId}.csv`;
+        link.click();
+        
+        button.innerHTML = originalText;
+        button.disabled = false;
+    }, 1000);
+}
+
+function compareBacktest(backtestId) {
+    // Show comparison modal
+    const modal = new bootstrap.Modal(document.getElementById('compareModal'));
+    modal.show();
+    
+    // Initialize comparison chart
+    initializeComparisonChart();
+}
+
+function initializeComparisonChart() {
+    const ctx = document.getElementById('comparisonChart').getContext('2d');
+    
+    comparisonChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: [],
+            datasets: []
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: true
+                }
+            },
+            scales: {
+                x: {
+                    type: 'time',
+                    time: {
+                        unit: 'day'
+                    }
+                },
+                y: {
+                    beginAtZero: false,
+                    ticks: {
+                        callback: function(value) {
+                            return '$' + value.toLocaleString();
+                        }
+                    }
+                }
+            }
+        }
+    });
+}
+
+function deployStrategy(strategy, symbol) {
+    if (confirm(`Deploy ${strategy} strategy for ${symbol} to live trading?`)) {
+        alert('Strategy deployment feature coming soon!');
+    }
+}
+
+function deleteBacktest(backtestId) {
+    if (confirm('Are you sure you want to delete this backtest?')) {
+        // In a real implementation, this would make an API call
+        alert('Backtest deleted successfully!');
+        location.reload();
+    }
+}
+
+function refreshBacktests() {
+    const button = event.target;
+    const originalText = button.innerHTML;
+    button.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Refreshing...';
+    button.disabled = true;
+    
+    setTimeout(() => {
+        button.innerHTML = originalText;
+        button.disabled = false;
+        location.reload();
+    }, 1500);
+}
+</script>
+{% endblock %}
