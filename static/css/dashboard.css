@@ -1,0 +1,472 @@
+/* Walford Capitals Trading Bot - Custom Dashboard Styles */
+
+/* Dark Theme Variables */
+:root {
+    --wc-primary: #0d6efd;
+    --wc-success: #198754;
+    --wc-danger: #dc3545;
+    --wc-warning: #ffc107;
+    --wc-info: #0dcaf0;
+    --wc-dark: #212529;
+    --wc-darker: #1a1d20;
+    --wc-light: #f8f9fa;
+    --wc-secondary: #6c757d;
+    --wc-border: #404449;
+    --wc-sidebar: #1e2125;
+    --wc-card-bg: #2d3135;
+    --wc-text-primary: #ffffff;
+    --wc-text-secondary: #adb5bd;
+    --wc-text-muted: #6c757d;
+}
+
+/* Global Styles */
+body {
+    background-color: var(--wc-darker);
+    color: var(--wc-text-primary);
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+/* Custom Card Styles */
+.card {
+    background-color: var(--wc-card-bg);
+    border: 1px solid var(--wc-border);
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    transition: box-shadow 0.15s ease-in-out;
+}
+
+.card:hover {
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+.card-header {
+    background-color: rgba(13, 110, 253, 0.1);
+    border-bottom: 1px solid var(--wc-border);
+    font-weight: 600;
+}
+
+/* Navigation Enhancements */
+.navbar-brand {
+    font-weight: 700;
+    font-size: 1.5rem;
+}
+
+.nav-link {
+    font-weight: 500;
+    transition: color 0.15s ease-in-out;
+}
+
+.nav-link:hover {
+    color: var(--wc-primary) !important;
+}
+
+.nav-link.active {
+    color: var(--wc-primary) !important;
+    font-weight: 600;
+}
+
+/* Table Enhancements */
+.table-dark {
+    --bs-table-bg: var(--wc-darker);
+    --bs-table-border-color: var(--wc-border);
+}
+
+.table-hover tbody tr:hover {
+    background-color: rgba(13, 110, 253, 0.05);
+}
+
+.table td, .table th {
+    border-color: var(--wc-border);
+    padding: 0.75rem;
+    vertical-align: middle;
+}
+
+/* Button Enhancements */
+.btn {
+    font-weight: 500;
+    transition: all 0.15s ease-in-out;
+    border-radius: 6px;
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, #0d6efd 0%, #0b5ed7 100%);
+    border: none;
+}
+
+.btn-primary:hover {
+    background: linear-gradient(135deg, #0b5ed7 0%, #0a58ca 100%);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(13, 110, 253, 0.3);
+}
+
+.btn-success {
+    background: linear-gradient(135deg, #198754 0%, #157347 100%);
+    border: none;
+}
+
+.btn-success:hover {
+    background: linear-gradient(135deg, #157347 0%, #146c43 100%);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(25, 135, 84, 0.3);
+}
+
+.btn-danger {
+    background: linear-gradient(135deg, #dc3545 0%, #bb2d3b 100%);
+    border: none;
+}
+
+.btn-danger:hover {
+    background: linear-gradient(135deg, #bb2d3b 0%, #b02a37 100%);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(220, 53, 69, 0.3);
+}
+
+/* Progress Bar Enhancements */
+.progress {
+    background-color: rgba(255, 255, 255, 0.1);
+    border-radius: 4px;
+}
+
+.progress-bar {
+    transition: width 0.6s ease;
+}
+
+/* Badge Enhancements */
+.badge {
+    font-weight: 600;
+    padding: 0.5em 0.75em;
+    border-radius: 6px;
+}
+
+.badge.fs-6 {
+    font-size: 0.875rem !important;
+    padding: 0.375rem 0.75rem;
+}
+
+/* Alert Enhancements */
+.alert {
+    border: none;
+    border-radius: 8px;
+    border-left: 4px solid;
+}
+
+.alert-success {
+    background-color: rgba(25, 135, 84, 0.1);
+    border-left-color: var(--wc-success);
+    color: #a3cfbb;
+}
+
+.alert-danger {
+    background-color: rgba(220, 53, 69, 0.1);
+    border-left-color: var(--wc-danger);
+    color: #f1aeb5;
+}
+
+.alert-info {
+    background-color: rgba(13, 202, 240, 0.1);
+    border-left-color: var(--wc-info);
+    color: #a6e9f5;
+}
+
+.alert-warning {
+    background-color: rgba(255, 193, 7, 0.1);
+    border-left-color: var(--wc-warning);
+    color: #ffda6a;
+}
+
+/* Modal Enhancements */
+.modal-content {
+    background-color: var(--wc-card-bg);
+    border: 1px solid var(--wc-border);
+    border-radius: 12px;
+}
+
+.modal-header {
+    border-bottom: 1px solid var(--wc-border);
+}
+
+.modal-footer {
+    border-top: 1px solid var(--wc-border);
+}
+
+/* Form Enhancements */
+.form-control {
+    background-color: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--wc-border);
+    border-radius: 6px;
+    color: var(--wc-text-primary);
+    transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+}
+
+.form-control:focus {
+    background-color: rgba(255, 255, 255, 0.08);
+    border-color: var(--wc-primary);
+    box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.25);
+    color: var(--wc-text-primary);
+}
+
+.form-select {
+    background-color: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--wc-border);
+    color: var(--wc-text-primary);
+}
+
+.form-select:focus {
+    border-color: var(--wc-primary);
+    box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.25);
+}
+
+.form-label {
+    color: var(--wc-text-secondary);
+    font-weight: 500;
+    margin-bottom: 0.5rem;
+}
+
+/* Dropdown Enhancements */
+.dropdown-menu {
+    background-color: var(--wc-card-bg);
+    border: 1px solid var(--wc-border);
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.dropdown-item {
+    color: var(--wc-text-primary);
+    transition: background-color 0.15s ease-in-out;
+}
+
+.dropdown-item:hover {
+    background-color: rgba(13, 110, 253, 0.1);
+    color: var(--wc-primary);
+}
+
+/* Chart Container Styles */
+.chart-container {
+    position: relative;
+    height: 300px;
+    background-color: rgba(255, 255, 255, 0.02);
+    border-radius: 8px;
+    padding: 20px;
+}
+
+/* Trading Signal Styles */
+.signal-confidence-high {
+    color: var(--wc-success);
+    font-weight: 600;
+}
+
+.signal-confidence-medium {
+    color: var(--wc-warning);
+    font-weight: 600;
+}
+
+.signal-confidence-low {
+    color: var(--wc-danger);
+    font-weight: 600;
+}
+
+/* Portfolio Performance Colors */
+.portfolio-positive {
+    color: var(--wc-success);
+}
+
+.portfolio-negative {
+    color: var(--wc-danger);
+}
+
+.portfolio-neutral {
+    color: var(--wc-text-secondary);
+}
+
+/* Loading States */
+.loading-spinner {
+    display: inline-block;
+    width: 20px;
+    height: 20px;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    border-radius: 50%;
+    border-top-color: var(--wc-primary);
+    animation: spin 1s ease-in-out infinite;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* Status Indicators */
+.status-online {
+    color: var(--wc-success);
+}
+
+.status-offline {
+    color: var(--wc-danger);
+}
+
+.status-warning {
+    color: var(--wc-warning);
+}
+
+/* Pagination Enhancements */
+.pagination .page-link {
+    background-color: var(--wc-card-bg);
+    border: 1px solid var(--wc-border);
+    color: var(--wc-text-primary);
+    margin: 0 2px;
+    border-radius: 6px;
+}
+
+.pagination .page-link:hover {
+    background-color: rgba(13, 110, 253, 0.1);
+    border-color: var(--wc-primary);
+    color: var(--wc-primary);
+}
+
+.pagination .page-item.active .page-link {
+    background-color: var(--wc-primary);
+    border-color: var(--wc-primary);
+}
+
+/* Footer Styles */
+footer {
+    margin-top: auto;
+    background-color: var(--wc-darker) !important;
+    border-top: 1px solid var(--wc-border) !important;
+}
+
+/* Responsive Enhancements */
+@media (max-width: 768px) {
+    .card-body {
+        padding: 1rem;
+    }
+    
+    .btn-group-sm .btn {
+        padding: 0.25rem 0.5rem;
+        font-size: 0.775rem;
+    }
+    
+    .table-responsive {
+        font-size: 0.875rem;
+    }
+    
+    h2 {
+        font-size: 1.5rem;
+    }
+    
+    .modal-lg {
+        max-width: 90%;
+    }
+}
+
+@media (max-width: 576px) {
+    .container-fluid {
+        padding: 0.5rem;
+    }
+    
+    .card {
+        margin-bottom: 1rem;
+    }
+    
+    .btn {
+        font-size: 0.875rem;
+        padding: 0.375rem 0.75rem;
+    }
+    
+    .table td, .table th {
+        padding: 0.5rem;
+        font-size: 0.825rem;
+    }
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: var(--wc-darker);
+}
+
+::-webkit-scrollbar-thumb {
+    background: var(--wc-border);
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: var(--wc-secondary);
+}
+
+/* Animation Classes */
+.fade-in {
+    animation: fadeIn 0.5s ease-in-out;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.slide-in {
+    animation: slideIn 0.3s ease-in-out;
+}
+
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateX(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+/* Utility Classes */
+.text-gradient {
+    background: linear-gradient(135deg, var(--wc-primary), var(--wc-info));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.border-gradient {
+    border: 2px solid transparent;
+    background: linear-gradient(var(--wc-card-bg), var(--wc-card-bg)) padding-box,
+                linear-gradient(135deg, var(--wc-primary), var(--wc-info)) border-box;
+}
+
+.shadow-custom {
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}
+
+.shadow-custom-lg {
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+}
+
+/* Print Styles */
+@media print {
+    .navbar,
+    .btn,
+    .modal,
+    footer {
+        display: none !important;
+    }
+    
+    .card {
+        border: 1px solid #000 !important;
+        box-shadow: none !important;
+    }
+    
+    body {
+        background: white !important;
+        color: black !important;
+    }
+}
