@@ -1,0 +1,576 @@
+{% extends "base.html" %}
+
+{% block title %}Trading Signals - Walford Capitals Trading Bot{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center">
+            <h2><i class="fas fa-signal me-2"></i>Trading Signals</h2>
+            <div class="btn-group">
+                <button type="button" class="btn btn-primary" onclick="generateNewSignal()">
+                    <i class="fas fa-magic me-1"></i>Generate Signal
+                </button>
+                <button type="button" class="btn btn-outline-primary" onclick="refreshSignals()">
+                    <i class="fas fa-sync me-1"></i>Refresh
+                </button>
+                <div class="btn-group">
+                    <button type="button" class="btn btn-outline-secondary dropdown-toggle" data-bs-toggle="dropdown">
+                        <i class="fas fa-filter me-1"></i>Filter
+                    </button>
+                    <ul class="dropdown-menu">
+                        <li><a class="dropdown-item" href="#" onclick="filterSignals('all')">All Signals</a></li>
+                        <li><a class="dropdown-item" href="#" onclick="filterSignals('buy')">Buy Signals</a></li>
+                        <li><a class="dropdown-item" href="#" onclick="filterSignals('sell')">Sell Signals</a></li>
+                        <li><a class="dropdown-item" href="#" onclick="filterSignals('high_confidence')">High Confidence</a></li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li><a class="dropdown-item" href="#" onclick="filterSignals('today')">Today</a></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Signal Statistics Cards -->
+<div class="row mb-4">
+    <div class="col-lg-3 col-md-6 mb-3">
+        <div class="card bg-success text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        {% set buy_signals = signals.items|selectattr('signal_type', 'equalto', 'buy')|list|length if signals else 0 %}
+                        <h6 class="text-uppercase mb-1">Buy Signals</h6>
+                        <h4 class="mb-0">{{ buy_signals }}</h4>
+                        <small>Active buy opportunities</small>
+                    </div>
+                    <i class="fas fa-arrow-up fa-2x opacity-75"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-3 col-md-6 mb-3">
+        <div class="card bg-danger text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        {% set sell_signals = signals.items|selectattr('signal_type', 'equalto', 'sell')|list|length if signals else 0 %}
+                        <h6 class="text-uppercase mb-1">Sell Signals</h6>
+                        <h4 class="mb-0">{{ sell_signals }}</h4>
+                        <small>Active sell opportunities</small>
+                    </div>
+                    <i class="fas fa-arrow-down fa-2x opacity-75"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-3 col-md-6 mb-3">
+        <div class="card bg-primary text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        {% set high_conf_signals = signals.items|selectattr('confidence', '>', 0.8)|list|length if signals else 0 %}
+                        <h6 class="text-uppercase mb-1">High Confidence</h6>
+                        <h4 class="mb-0">{{ high_conf_signals }}</h4>
+                        <small>Confidence > 80%</small>
+                    </div>
+                    <i class="fas fa-star fa-2x opacity-75"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-3 col-md-6 mb-3">
+        <div class="card bg-warning text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="text-uppercase mb-1">ML Powered</h6>
+                        {% set ml_signals = signals.items|selectattr('strategy_name', 'containing', 'ml')|list|length if signals else 0 %}
+                        <h4 class="mb-0">{{ ml_signals }}</h4>
+                        <small>AI-generated signals</small>
+                    </div>
+                    <i class="fas fa-robot fa-2x opacity-75"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Active Signals -->
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0"><i class="fas fa-list me-2"></i>Active Trading Signals</h5>
+                    <div class="d-flex align-items-center">
+                        <span class="badge bg-success me-2">{{ signals.total if signals else 0 }} Total</span>
+                        <small class="text-muted">Last updated: <span id="lastUpdate"></span></small>
+                    </div>
+                </div>
+            </div>
+            <div class="card-body">
+                {% if signals and signals.items %}
+                    <div class="table-responsive">
+                        <table class="table table-hover" id="signalsTable">
+                            <thead class="table-dark">
+                                <tr>
+                                    <th>Symbol</th>
+                                    <th>Signal</th>
+                                    <th>Confidence</th>
+                                    <th>Strategy</th>
+                                    <th>Target Price</th>
+                                    <th>Stop Loss</th>
+                                    <th>Timeframe</th>
+                                    <th>Created</th>
+                                    <th>Expires</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for signal in signals.items %}
+                                <tr class="signal-row" 
+                                    data-signal-type="{{ signal.signal_type }}" 
+                                    data-confidence="{{ signal.confidence }}"
+                                    data-created="{{ signal.created_at.strftime('%Y-%m-%d') }}">
+                                    <td>
+                                        <strong class="text-primary">{{ signal.symbol }}</strong>
+                                    </td>
+                                    <td>
+                                        <span class="badge fs-6 bg-{% if signal.signal_type == 'buy' %}success{% elif signal.signal_type == 'sell' %}danger{% else %}warning{% endif %}">
+                                            <i class="fas fa-{% if signal.signal_type == 'buy' %}arrow-up{% elif signal.signal_type == 'sell' %}arrow-down{% else %}minus{% endif %} me-1"></i>
+                                            {{ signal.signal_type.upper() }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            <div class="progress me-2" style="width: 60px; height: 8px;">
+                                                <div class="progress-bar 
+                                                    {% if signal.confidence >= 0.8 %}bg-success
+                                                    {% elif signal.confidence >= 0.6 %}bg-warning
+                                                    {% else %}bg-danger{% endif %}" 
+                                                    style="width: {{ (signal.confidence * 100)|round }}%"></div>
+                                            </div>
+                                            <small class="fw-bold">{{ "%.1f"|format(signal.confidence * 100) }}%</small>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-info">{{ signal.strategy_name }}</span>
+                                    </td>
+                                    <td>
+                                        {% if signal.target_price %}
+                                            <span class="text-success fw-bold">${{ "%.2f"|format(signal.target_price) }}</span>
+                                        {% else %}
+                                            <span class="text-muted">-</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if signal.stop_loss_price %}
+                                            <span class="text-danger fw-bold">${{ "%.2f"|format(signal.stop_loss_price) }}</span>
+                                        {% else %}
+                                            <span class="text-muted">-</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-secondary">{{ signal.timeframe }}</span>
+                                    </td>
+                                    <td>
+                                        <small class="text-muted">
+                                            {{ signal.created_at.strftime('%m/%d %H:%M') }}
+                                        </small>
+                                    </td>
+                                    <td>
+                                        {% if signal.expires_at %}
+                                            <small class="text-muted">
+                                                {{ signal.expires_at.strftime('%m/%d %H:%M') }}
+                                            </small>
+                                        {% else %}
+                                            <small class="text-muted">-</small>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <div class="btn-group btn-group-sm">
+                                            <button class="btn btn-outline-primary" 
+                                                    onclick="viewSignalDetails({{ signal.id }})"
+                                                    title="View Details">
+                                                <i class="fas fa-eye"></i>
+                                            </button>
+                                            <button class="btn btn-outline-success" 
+                                                    onclick="executeSignal('{{ signal.symbol }}', '{{ signal.signal_type }}', {{ signal.confidence }})"
+                                                    title="Execute Trade">
+                                                <i class="fas fa-play"></i>
+                                            </button>
+                                            <button class="btn btn-outline-info" 
+                                                    onclick="analyzeSignal({{ signal.id }})"
+                                                    title="Analyze">
+                                                <i class="fas fa-chart-line"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <!-- Pagination -->
+                    {% if signals.pages > 1 %}
+                    <nav aria-label="Signals pagination">
+                        <ul class="pagination justify-content-center">
+                            {% if signals.has_prev %}
+                                <li class="page-item">
+                                    <a class="page-link" href="{{ url_for('signals', page=signals.prev_num) }}">Previous</a>
+                                </li>
+                            {% endif %}
+                            
+                            {% for page_num in signals.iter_pages() %}
+                                {% if page_num %}
+                                    {% if page_num != signals.page %}
+                                        <li class="page-item">
+                                            <a class="page-link" href="{{ url_for('signals', page=page_num) }}">{{ page_num }}</a>
+                                        </li>
+                                    {% else %}
+                                        <li class="page-item active">
+                                            <span class="page-link">{{ page_num }}</span>
+                                        </li>
+                                    {% endif %}
+                                {% else %}
+                                    <li class="page-item disabled">
+                                        <span class="page-link">...</span>
+                                    </li>
+                                {% endif %}
+                            {% endfor %}
+                            
+                            {% if signals.has_next %}
+                                <li class="page-item">
+                                    <a class="page-link" href="{{ url_for('signals', page=signals.next_num) }}">Next</a>
+                                </li>
+                            {% endif %}
+                        </ul>
+                    </nav>
+                    {% endif %}
+                {% else %}
+                    <div class="text-center py-5">
+                        <i class="fas fa-signal fa-4x text-muted mb-3"></i>
+                        <h5 class="text-muted">No Active Signals</h5>
+                        <p class="text-muted">Generate new signals to see trading opportunities</p>
+                        <button class="btn btn-primary" onclick="generateNewSignal()">
+                            <i class="fas fa-magic me-1"></i>Generate Your First Signal
+                        </button>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Signal Details Modal -->
+<div class="modal fade" id="signalDetailsModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-chart-line me-2"></i>Signal Details
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div id="signalDetailsContent">
+                    <!-- Content loaded dynamically -->
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-success" id="executeFromModal">
+                    <i class="fas fa-play me-1"></i>Execute Trade
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Generate Signal Modal -->
+<div class="modal fade" id="generateSignalModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-magic me-2"></i>Generate New Signal
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="generateSignalForm">
+                    <div class="mb-3">
+                        <label for="signalSymbol" class="form-label">Symbol</label>
+                        <select class="form-select" id="signalSymbol" required>
+                            <option value="">Select Symbol</option>
+                            <option value="AAPL">AAPL - Apple Inc.</option>
+                            <option value="MSFT">MSFT - Microsoft Corp.</option>
+                            <option value="GOOGL">GOOGL - Alphabet Inc.</option>
+                            <option value="AMZN">AMZN - Amazon.com Inc.</option>
+                            <option value="TSLA">TSLA - Tesla Inc.</option>
+                            <option value="META">META - Meta Platforms</option>
+                            <option value="NVDA">NVDA - NVIDIA Corp.</option>
+                            <option value="JPM">JPM - JPMorgan Chase</option>
+                            <option value="JNJ">JNJ - Johnson & Johnson</option>
+                            <option value="V">V - Visa Inc.</option>
+                        </select>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="signalStrategy" class="form-label">Strategy</label>
+                        <select class="form-select" id="signalStrategy">
+                            <option value="ensemble">Ensemble (Recommended)</option>
+                            <option value="ml_only">ML Only</option>
+                            <option value="technical_only">Technical Analysis Only</option>
+                            <option value="multi_timeframe">Multi-Timeframe Analysis</option>
+                        </select>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="signalTimeframe" class="form-label">Timeframe</label>
+                        <select class="form-select" id="signalTimeframe">
+                            <option value="1h">1 Hour</option>
+                            <option value="4h">4 Hours</option>
+                            <option value="1d">1 Day</option>
+                        </select>
+                    </div>
+                    
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle me-2"></i>
+                        Signals are generated using advanced ML models and technical analysis.
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="submitSignalGeneration()">
+                    <i class="fas fa-magic me-1"></i>Generate Signal
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    updateLastUpdateTime();
+    
+    // Auto-refresh signals every 5 minutes
+    setInterval(function() {
+        if (document.visibilityState === 'visible') {
+            refreshSignals(true);
+        }
+    }, 300000); // 5 minutes
+});
+
+function updateLastUpdateTime() {
+    const timeElement = document.getElementById('lastUpdate');
+    if (timeElement) {
+        timeElement.textContent = new Date().toLocaleTimeString();
+    }
+}
+
+function generateNewSignal() {
+    const modal = new bootstrap.Modal(document.getElementById('generateSignalModal'));
+    modal.show();
+}
+
+function submitSignalGeneration() {
+    const symbol = document.getElementById('signalSymbol').value;
+    const strategy = document.getElementById('signalStrategy').value;
+    const timeframe = document.getElementById('signalTimeframe').value;
+    
+    if (!symbol) {
+        alert('Please select a symbol');
+        return;
+    }
+    
+    const button = event.target;
+    const originalText = button.innerHTML;
+    button.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Generating...';
+    button.disabled = true;
+    
+    const url = `/api/generate_signal/${symbol}?strategy=${strategy}&timeframe=${timeframe}`;
+    
+    fetch(url)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                const signal = data.signal;
+                const message = `Signal generated for ${symbol}:\n` +
+                              `Type: ${signal.type.toUpperCase()}\n` +
+                              `Confidence: ${(signal.confidence * 100).toFixed(1)}%\n` +
+                              `Strategy: ${signal.strategy}`;
+                
+                alert(message);
+                
+                // Close modal and refresh page
+                const modal = bootstrap.Modal.getInstance(document.getElementById('generateSignalModal'));
+                modal.hide();
+                location.reload();
+            } else {
+                alert('Error generating signal: ' + data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error generating signal');
+        })
+        .finally(() => {
+            button.innerHTML = originalText;
+            button.disabled = false;
+        });
+}
+
+function viewSignalDetails(signalId) {
+    const modal = new bootstrap.Modal(document.getElementById('signalDetailsModal'));
+    
+    // Create detailed signal view
+    const content = document.getElementById('signalDetailsContent');
+    content.innerHTML = `
+        <div class="text-center py-3">
+            <i class="fas fa-spinner fa-spin fa-2x"></i>
+            <p class="mt-2">Loading signal details...</p>
+        </div>
+    `;
+    
+    modal.show();
+    
+    // Simulate loading signal details
+    setTimeout(() => {
+        content.innerHTML = `
+            <div class="row">
+                <div class="col-md-6">
+                    <h6>Signal Information</h6>
+                    <table class="table table-sm">
+                        <tr><td>Signal ID:</td><td><strong>${signalId}</strong></td></tr>
+                        <tr><td>Model Version:</td><td>v2.1.0</td></tr>
+                        <tr><td>Feature Count:</td><td>45</td></tr>
+                        <tr><td>Training Data:</td><td>2 years</td></tr>
+                    </table>
+                </div>
+                <div class="col-md-6">
+                    <h6>Technical Indicators</h6>
+                    <table class="table table-sm">
+                        <tr><td>RSI (14):</td><td>65.2</td></tr>
+                        <tr><td>MACD:</td><td>Bullish</td></tr>
+                        <tr><td>Bollinger Position:</td><td>0.75</td></tr>
+                        <tr><td>Volume Ratio:</td><td>1.4x</td></tr>
+                    </table>
+                </div>
+            </div>
+            <div class="row mt-3">
+                <div class="col-12">
+                    <h6>Feature Importance</h6>
+                    <canvas id="featureChart" height="200"></canvas>
+                </div>
+            </div>
+        `;
+        
+        // Initialize feature importance chart
+        const ctx = document.getElementById('featureChart').getContext('2d');
+        new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: ['RSI', 'MACD', 'Volume', 'Price Action', 'Volatility'],
+                datasets: [{
+                    label: 'Feature Importance',
+                    data: [0.25, 0.22, 0.18, 0.20, 0.15],
+                    backgroundColor: 'rgba(13, 110, 253, 0.7)',
+                    borderColor: 'rgba(13, 110, 253, 1)',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: false
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        max: 0.3
+                    }
+                }
+            }
+        });
+    }, 1500);
+}
+
+function executeSignal(symbol, signalType, confidence) {
+    const message = `Execute ${signalType.toUpperCase()} order for ${symbol}?\n` +
+                   `Confidence: ${(confidence * 100).toFixed(1)}%`;
+    
+    if (confirm(message)) {
+        alert('Trade execution feature will be implemented in the portfolio section.');
+    }
+}
+
+function analyzeSignal(signalId) {
+    alert(`Detailed analysis for signal ${signalId} coming soon!`);
+}
+
+function filterSignals(filter) {
+    const rows = document.querySelectorAll('.signal-row');
+    
+    rows.forEach(row => {
+        const signalType = row.getAttribute('data-signal-type');
+        const confidence = parseFloat(row.getAttribute('data-confidence'));
+        const created = row.getAttribute('data-created');
+        const today = new Date().toISOString().split('T')[0];
+        
+        let show = true;
+        
+        switch(filter) {
+            case 'buy':
+                show = signalType === 'buy';
+                break;
+            case 'sell':
+                show = signalType === 'sell';
+                break;
+            case 'high_confidence':
+                show = confidence >= 0.8;
+                break;
+            case 'today':
+                show = created === today;
+                break;
+            case 'all':
+            default:
+                show = true;
+                break;
+        }
+        
+        row.style.display = show ? '' : 'none';
+    });
+}
+
+function refreshSignals(silent = false) {
+    if (!silent) {
+        const button = event.target;
+        const originalText = button.innerHTML;
+        button.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Refreshing...';
+        button.disabled = true;
+        
+        setTimeout(() => {
+            button.innerHTML = originalText;
+            button.disabled = false;
+            updateLastUpdateTime();
+            location.reload();
+        }, 1500);
+    } else {
+        // Silent refresh for auto-update
+        updateLastUpdateTime();
+    }
+}
+</script>
+{% endblock %}
